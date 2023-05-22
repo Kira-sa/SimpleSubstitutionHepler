@@ -7,7 +7,10 @@
 #     1. если слово было обнаружено, произвести замену известных букв и вывести сообщение пользователю
 #     2. если слово не было обнаружено - сообщить пользователю что ничего не найдено
 
-import pprint
+import re
+
+
+from prepare_dictionary import get_word_pattern, prepare_dictionaries
 
 
 cipher_text = ''
@@ -17,51 +20,13 @@ known_word_pattern = ''
 includes = []  # место для записии обнаруженных включений
 
 
-all_patterns = {}  # все шаблоны слов из словаря
+dictionary_patterns = {}
+partial_key = {}
 
 
 def read_text():
     with open('resources/text.txt', encoding='utf-8') as file:
         return file.read()
-
-
-def get_word_pattern(word: str):
-    """
-    Определение повторяющихся букв в слове
-    :param word: слово
-    :return: шаблон повторяющихся букв
-    """
-    word = word.upper()
-    next_number = 0
-    letters = {}
-    word_pattern = []
-
-    for letter in word:
-        if letter not in letters:
-            letters[letter] = str(next_number)
-            next_number += 1
-        word_pattern.append(letters[letter])
-    return '.'.join(word_pattern)
-
-
-def get_all_patterns_from_dictionary():
-    # all_patterns.clear ?
-    word_list = []
-
-    with open('resources/dictionary_1.txt', encoding='utf-8') as file:
-        word_list = file.read().split('\n')
-
-    for word in word_list:
-        pattern = get_word_pattern(word)
-
-        if pattern not in all_patterns:
-            all_patterns[pattern] = [word]
-        else:
-            all_patterns[pattern].append(word)
-
-    with open('resources/dictionary_1_patterns.py', 'w') as file:
-        file.write('all_patterns = ')
-        file.write(pprint.pformat(all_patterns))
 
 
 def get_all_includes(text: str, word: str):
@@ -94,24 +59,152 @@ def get_partial_key(encoded_word, known_word):
     return res
 
 
-def magic(text):
+def text_to_words(text):
+    """ пробуем разбить текст на слова, без учета известного слова """
+    words = []
+    words_d = {}
+    start = 0
+    word_len = 1
 
-    buf = ''
-    buf_len = 2
-    for key in range(len(text) - buf_len):
-        # берем предполагаемое слово и строим шаблон
-        buf = text[key : key + buf_len]
-        buf_pattern = get_word_pattern(buf)
-        # ищем совпадения по шаблону со словарём
-        pass
-        # если совпадения есть, пробуем увеличить слово
-        # если совпадений нет, уменьшаем слово - запомниаем совпавшие слова по шаблону
-    pass
+    while True:
+        # если доползли до конца, то всё (на потерю последнего слова пока забьём)
+        if start + word_len > len(text):
+            break
+        
+        # берём слово
+        word_candidate = text[start:start+word_len]
+        word_candidate_pattern = get_word_pattern(word_candidate)
 
+        if word_candidate_pattern in dictionary_patterns:
+            # шаблон есть, продолжим проверять увеличив слово на 1 символ
+            word_len += 1
+        else:
+            # похоже такого слова нет
+            # откатываем назад
+            # изменяем индексы
+            # пробуем взять слово и записать его в words
+
+            # aa = dictionary_patterns.get(word_candidate_pattern) is None  # проверка что по ключу можно взять значение из словаря
+            while True:
+                word_len -= 1
+                # обновляем слово, пересчитываем
+                word_candidate = text[start:start+word_len]
+                word_candidate_pattern = get_word_pattern(word_candidate)
+
+                if dictionary_patterns.get(word_candidate_pattern) is None:
+                    # ошибка сравнения, откатываем индекс еще назад
+                    continue
+                
+                words_d[word_candidate] = dictionary_patterns[word_candidate_pattern]
+                words.append(word_candidate)
+                start += word_len
+                # успех, выходим
+                break
+                
+    return words
+
+
+def text_to_words_known(text):
+    """ пробуем разбить текст на слова с учетом известного слова """
+    words = []
+    words_d = {}
+    start = 0
+    word_len = 1
+
+    l = len(text)
+    isLast = False
+
+    while True:
+        # если доползли до конца, то проверяем последнее слово
+        if start + word_len > len(text):
+            if isLast:
+                break
+            else:
+                isLast = True
+
+        # берём слово
+        word_candidate = text[start:start+word_len]
+        word_candidate_pattern = get_word_pattern(word_candidate)  # определяем паттерн слова
+        word_candidate_known_letters, word_map = check_known_letters(word_candidate)  # определяем какие буквы точно должны быть в искомом слове
+
+        if word_candidate_pattern in dictionary_patterns and not isLast:
+            # шаблон есть, продолжим проверять увеличив слово на 1 символ
+            word_len += 1
+        else:
+            # похоже такого слова нет
+            # откатываем назад
+            # изменяем индексы
+            # пробуем взять слово и записать его в words
+
+            # aa = dictionary_patterns.get(word_candidate_pattern) is None  # проверка что по ключу можно взять значение из словаря
+            while True:
+                word_len -= 1
+                # обновляем слово, пересчитываем
+                word_candidate = text[start:start+word_len]
+                word_candidate_pattern = get_word_pattern(word_candidate)
+                word_candidate_known_letters, word_map = check_known_letters(word_candidate)
+
+                # ошибка сравнения, откатываем индекс еще назад
+                if dictionary_patterns.get(word_candidate_pattern) is None:
+                    continue
+
+                # слова из словаря
+                d_words = dictionary_patterns[word_candidate_pattern]
+
+                # если в подходящем индексе нет слов с подходящими буквами, откатываем индекс назад
+                words_exists = get_word_exists(d_words, word_candidate_known_letters, word_map)
+                if len(words_exists) == 0:
+                    continue
+                
+                words_d[word_candidate] = words_exists
+                words.append(word_candidate)
+                start += word_len
+                word_len = 1
+                # успех, выходим
+                break
+
+    return words, words_d
+
+
+def get_word_exists(d_words, letters, word_map):
+    """ проверяем регуляркой что слово соответствует маске
+    если нашли - возращаем эти слова
+    если нет - список пустой
+    """
+    res = []
+
+    for word in d_words:
+        q = re.fullmatch(pattern=word_map, string=word)
+        if q is not None:
+            res.append(word)
+
+    return res
+
+
+def check_known_letters(word):
+    res = {}
+    s = []
+    for key, val in enumerate(word):
+        if val in partial_key:
+            res[key] = partial_key[val]
+            s.append(partial_key[val])
+        else:
+            s.append('.')
+    return res, "".join(s)
+
+
+def use_dictionary_1():
+    from resources.dictionary_1_patterns import all_patterns
+    return all_patterns
 
 
 if __name__ == "__main__":
-    print("start")
+    print("Подготовка словарей...")
+    prepare_dictionaries()
+    print("Подготовка словарей завершена")
+
+    dictionary_patterns = use_dictionary_1()
+
     known_word_pattern = get_word_pattern(known_word)
     print(f'{known_word}: {known_word_pattern}')
 
@@ -124,12 +217,20 @@ if __name__ == "__main__":
         partial_key = get_partial_key(cipher_text[includes[0] : includes[0] + known_word_len], known_word)
         partial_decoded_text = get_partial_decode(cipher_text, partial_key)
     
-    print(f'Исходный текст:')
-    print(cipher_text)
-    print(f'Предположительный текст:')
-    print(partial_decoded_text)
-
+        print(f'Исходный текст:')
+        print(cipher_text)
+        print(f'Предположительный текст:')
+        print(partial_decoded_text)
     
+    else:
+        print("Возможных включений известного слова в тексте не обнаружено")
+
+    # words = text_to_words(cipher_text)
+    words, words_d = text_to_words_known(cipher_text)
+    print(words)
+    for i in words_d:
+        print(f'{i}: {words_d[i]}')
+
     # дополнительное:
     # 5. грузим словарь и строим шаблоны для всех слов
     # 6. проходим по шифротексту, скользящим срезом проходим его в поиске слов
