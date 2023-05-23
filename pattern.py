@@ -7,7 +7,7 @@
 #     1. если слово было обнаружено, произвести замену известных букв и вывести сообщение пользователю
 #     2. если слово не было обнаружено - сообщить пользователю что ничего не найдено
 
-import os, re
+import os, re, copy
 
 import prepare_dictionary
 
@@ -74,7 +74,8 @@ def add_letters_to_mapping(letter_mapping, cipher_word, candidate):
 
 
 def intersect_mappings(mapA, mapB):
-    """ объединяем два словаря, добавляем только общие для обоих записи """
+    # """ объединяем два словаря, добавляем только общие для обоих записи """
+    """ объединяем два словаря"""
     result = get_blank_cipher_letter_mapping()
     for letter in LETTERS:
         if mapA[letter] == []:
@@ -82,9 +83,11 @@ def intersect_mappings(mapA, mapB):
         elif mapB[letter] == []:
             result[letter] = copy.deepcopy(mapA[letter])
         else:
+            # for mapped_letter in mapA[letter]:
+            #     if mapped_letter in mapB[letter]:
+            #         result[letter].append(mapped_letter)
             for mapped_letter in mapA[letter]:
-                if mapped_letter in mapB[letter]:
-                    result[letter].append(mapped_letter)
+                result[letter].append(mapped_letter)
     return result
 
 
@@ -104,6 +107,8 @@ def remove_solved_letters_from_mapping(letter_mapping):
         for cipher_letter in LETTERS:
             if len(letter_mapping[cipher_letter]) == 1:
                 solved_letters.append(letter_mapping[cipher_letter][0])
+            elif cipher_letter in letter_mapping.values():
+                a = 23
 
         for cipher_letter in LETTERS:
             for s in solved_letters:
@@ -286,8 +291,22 @@ if __name__ == "__main__":
         # for i in words_d:
         #     print(f'{i}: {words_d[i]}')
 
+        # основной словарь соответствий
+        intersect_map = get_blank_cipher_letter_mapping()
+
         # строим словарь
+        for word in words_d:
+            new_map = get_blank_cipher_letter_mapping()
+
+            for candidate in words_d[word]:
+                new_map = add_letters_to_mapping(new_map, word.upper(), candidate.upper())
+            
+            intersect_map = intersect_mappings(intersect_map, new_map)
+
         # чистим словарь
-        # собираем ключ
+        letter_mapping = remove_solved_letters_from_mapping(intersect_map)
+
+        a = 23
+        # собираем ключи
         # расшифровываем сообщение
         # записываем в results
