@@ -7,21 +7,112 @@
 #     1. если слово было обнаружено, произвести замену известных букв и вывести сообщение пользователю
 #     2. если слово не было обнаружено - сообщить пользователю что ничего не найдено
 
-import re
+import os, re
 
+import prepare_dictionary
 
-from prepare_dictionary import get_word_pattern, prepare_dictionaries
+if not os.path.exists('resources/dictionary_1_patterns.py'):
+    prepare_dictionary.main()
 
+from resources.dictionary_1_patterns import all_patterns
+
+LETTERS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
 
 cipher_text = ''
 known_word = 'КРИПТОАНАЛИЗ'
 known_word_len = len(known_word)
-known_word_pattern = ''
 includes = []  # место для записии обнаруженных включений
 
 
-dictionary_patterns = {}
-partial_key = {}
+partial_key = {}  # словарь соответствия шифрованных букв буквам из известного слова
+
+
+def get_blank_cipher_letter_mapping():
+    return {
+        'А': [],
+        'Б': [],
+        'В': [],
+        'Г': [],
+        'Д': [],
+        'Е': [],
+        'Ё': [],
+        'Ж': [],
+        'З': [],
+        'И': [],
+        'Й': [],
+        'К': [],
+        'Л': [],
+        'М': [],
+        'Н': [],
+        'О': [],
+        'П': [],
+        'Р': [],
+        'С': [],
+        'Т': [],
+        'У': [],
+        'Ф': [],
+        'Х': [],
+        'Ц': [],
+        'Ч': [],
+        'Ш': [],
+        'Щ': [],
+        'Ъ': [],
+        'Ы': [],
+        'Ь': [],
+        'Э': [],
+        'Ю': [],
+        'Я': [],
+    }
+
+
+def add_letters_to_mapping(letter_mapping, cipher_word, candidate):
+    letter_mapping = copy.deepcopy(letter_mapping)
+    for i in range(len(cipher_word)):
+        if candidate[i] not in letter_mapping[cipher_word[i]]:
+            letter_mapping[cipher_word[i]].append(candidate[i])
+    return letter_mapping
+
+
+def intersect_mappings(mapA, mapB):
+    """ объединяем два словаря, добавляем только общие для обоих записи """
+    result = get_blank_cipher_letter_mapping()
+    for letter in LETTERS:
+        if mapA[letter] == []:
+            result[letter] = copy.deepcopy(mapB[letter])
+        elif mapB[letter] == []:
+            result[letter] = copy.deepcopy(mapA[letter])
+        else:
+            for mapped_letter in mapA[letter]:
+                if mapped_letter in mapB[letter]:
+                    result[letter].append(mapped_letter)
+    return result
+
+
+def remove_solved_letters_from_mapping(letter_mapping):
+    """ 
+    исключаем потенциальные буквы из вариантов если уверены 
+    что они однозначно могут принадлежать конкретным шифрам 
+    """
+    letter_mapping = copy.deepcopy(letter_mapping)
+    loop_again = True
+
+    while loop_again:
+        loop_again = False
+
+        # список букв, которые имеют только одно соответствие (!!!)
+        solved_letters = []
+        for cipher_letter in LETTERS:
+            if len(letter_mapping[cipher_letter]) == 1:
+                solved_letters.append(letter_mapping[cipher_letter][0])
+
+        for cipher_letter in LETTERS:
+            for s in solved_letters:
+                if len(letter_mapping[cipher_letter]) != 1 and s in letter_mapping[cipher_letter]:
+                    letter_mapping[cipher_letter].remove(s)
+                    if len(letter_mapping[cipher_letter]) == 1:
+                        loop_again = True
+    
+    return letter_mapping
 
 
 def read_text():
@@ -29,17 +120,28 @@ def read_text():
         return file.read()
 
 
-def get_all_includes(text: str, word: str):
-    result = []
+def get_all_includes(text: str, word: str, word_pattern: str):
+    """ Собираем все уникальные подстроки, соответствующие шаблону известного слова"""
+    l = []
     word_len = len(word)
     for i in range(len(text) - word_len + 1):
         sub = text[i: i + word_len]
-        sub_pattern = get_word_pattern(sub)
+        sub_pattern = prepare_dictionary.get_word_pattern(sub)
         # print(f'{i}  {sub}: {sub_pattern}')  # вывод всех построенных шаблонов 
-        if sub_pattern == known_word_pattern:
-            # print("EURICA!")
-            result.append(i)
-    return result
+        if sub_pattern == word_pattern:
+            l.append(i)
+
+    q = {}
+    if len(l)>0:
+        print(f"Обнаруженные комбинации букв, соответствующие шаблону заданного слова '{word}'")
+
+    for i in l:
+        w = text[i:i+len(word)]
+        print(f"{i+1}: {w}")
+
+        if w not in q.values():
+            q[i] = text[i:i+len(word)]
+    return q.keys()
 
 
 def get_partial_decode(text, key):
@@ -52,56 +154,18 @@ def get_partial_decode(text, key):
     return res
 
 
-def get_partial_key(encoded_word, known_word):
+def get_partial_key(encoded_word: str, known_word: str) -> dict:
+    """ Составляем словарь соответствия зашифрованных букв -> к буквам из известного слова"""
     res = {}
     for key, val in enumerate(encoded_word):
         res[val.lower()] = known_word[key].lower()
     return res
 
 
-def text_to_words(text):
-    """ пробуем разбить текст на слова, без учета известного слова """
-    words = []
-    words_d = {}
-    start = 0
-    word_len = 1
-
-    while True:
-        # если доползли до конца, то всё (на потерю последнего слова пока забьём)
-        if start + word_len > len(text):
-            break
-        
-        # берём слово
-        word_candidate = text[start:start+word_len]
-        word_candidate_pattern = get_word_pattern(word_candidate)
-
-        if word_candidate_pattern in dictionary_patterns:
-            # шаблон есть, продолжим проверять увеличив слово на 1 символ
-            word_len += 1
-        else:
-            # похоже такого слова нет
-            # откатываем назад
-            # изменяем индексы
-            # пробуем взять слово и записать его в words
-
-            # aa = dictionary_patterns.get(word_candidate_pattern) is None  # проверка что по ключу можно взять значение из словаря
-            while True:
-                word_len -= 1
-                # обновляем слово, пересчитываем
-                word_candidate = text[start:start+word_len]
-                word_candidate_pattern = get_word_pattern(word_candidate)
-
-                if dictionary_patterns.get(word_candidate_pattern) is None:
-                    # ошибка сравнения, откатываем индекс еще назад
-                    continue
-                
-                words_d[word_candidate] = dictionary_patterns[word_candidate_pattern]
-                words.append(word_candidate)
-                start += word_len
-                # успех, выходим
-                break
-                
-    return words
+def from_text_to_word(text, start, wordlen):
+    word = text[start:start+wordlen]
+    pattern = prepare_dictionary.get_word_pattern(word)
+    return word, pattern
 
 
 def text_to_words_known(text):
@@ -114,6 +178,7 @@ def text_to_words_known(text):
     l = len(text)
     isLast = False
 
+    # цикл обхода шифрограммы
     while True:
         # если доползли до конца, то проверяем последнее слово
         if start + word_len > len(text):
@@ -123,39 +188,32 @@ def text_to_words_known(text):
                 isLast = True
 
         # берём слово
-        word_candidate = text[start:start+word_len]
-        word_candidate_pattern = get_word_pattern(word_candidate)  # определяем паттерн слова
-        word_candidate_known_letters, word_map = check_known_letters(word_candidate)  # определяем какие буквы точно должны быть в искомом слове
+        word_candidate, word_candidate_pattern = from_text_to_word(text, start, word_len)  # определяем паттерн слова
 
-        if word_candidate_pattern in dictionary_patterns and not isLast:
+        if word_candidate_pattern in all_patterns and not isLast:
             # шаблон есть, продолжим проверять увеличив слово на 1 символ
             word_len += 1
         else:
-            # похоже такого слова нет
-            # откатываем назад
-            # изменяем индексы
-            # пробуем взять слово и записать его в words
-
-            # aa = dictionary_patterns.get(word_candidate_pattern) is None  # проверка что по ключу можно взять значение из словаря
+            # похоже такого слова нет, уменьшаем слово на 1, 
+            # индекс гарантированно должен быть в словаре, 
+            # поэтому проверяем соответствие известным буквам
+            # aa = all_patterns.get(word_candidate_pattern) is None  # проверка что по ключу можно взять значение из словаря
+            
+            # цикл обхода предполагаемого слова 
             while True:
                 word_len -= 1
-                # обновляем слово, пересчитываем
-                word_candidate = text[start:start+word_len]
-                word_candidate_pattern = get_word_pattern(word_candidate)
-                word_candidate_known_letters, word_map = check_known_letters(word_candidate)
+                word_candidate, word_candidate_pattern = from_text_to_word(text, start, word_len)
+                known_letters, word_map = check_known_letters(word_candidate)
 
-                # ошибка сравнения, откатываем индекс еще назад
-                if dictionary_patterns.get(word_candidate_pattern) is None:
-                    continue
+                # слова из словаря, соответствующие шаблону
+                d_words = all_patterns[word_candidate_pattern]
 
-                # слова из словаря
-                d_words = dictionary_patterns[word_candidate_pattern]
-
-                # если в подходящем индексе нет слов с подходящими буквами, откатываем индекс назад
-                words_exists = get_word_exists(d_words, word_candidate_known_letters, word_map)
+                # если в подходящем индексе нет слов с подходящими буквами, уменьшаем длину слова, повторяем
+                words_exists = get_word_exists(d_words, word_map)
                 if len(words_exists) == 0:
                     continue
                 
+                # записываем результат
                 words_d[word_candidate] = words_exists
                 words.append(word_candidate)
                 start += word_len
@@ -166,8 +224,9 @@ def text_to_words_known(text):
     return words, words_d
 
 
-def get_word_exists(d_words, letters, word_map):
-    """ проверяем регуляркой что слово соответствует маске
+def get_word_exists(d_words, word_map):
+    """ 
+    проверяем регуляркой что слова соответствуют маске
     если нашли - возращаем эти слова
     если нет - список пустой
     """
@@ -182,6 +241,9 @@ def get_word_exists(d_words, letters, word_map):
 
 
 def check_known_letters(word):
+    """ Строим шаблон для регулярки 
+        на основании проверяемого слова и 'известных' расшифровок букв
+    """
     res = {}
     s = []
     for key, val in enumerate(word):
@@ -193,51 +255,39 @@ def check_known_letters(word):
     return res, "".join(s)
 
 
-def use_dictionary_1():
-    from resources.dictionary_1_patterns import all_patterns
-    return all_patterns
-
-
 if __name__ == "__main__":
-    print("Подготовка словарей...")
-    prepare_dictionaries()
-    print("Подготовка словарей завершена")
-
-    dictionary_patterns = use_dictionary_1()
-
-    known_word_pattern = get_word_pattern(known_word)
+    known_word_pattern = prepare_dictionary.get_word_pattern(known_word)
     print(f'{known_word}: {known_word_pattern}')
 
     cipher_text = read_text().lower()
-    includes = get_all_includes(cipher_text, known_word)
-    print(f'Включения известного слова: {includes}')
+    includes = get_all_includes(cipher_text, known_word, known_word_pattern)
 
-    if len(includes) > 0:
-        # собираем частичный ключ по известному слову
-        partial_key = get_partial_key(cipher_text[includes[0] : includes[0] + known_word_len], known_word)
-        partial_decoded_text = get_partial_decode(cipher_text, partial_key)
+    if len(includes) == 0:
+        print("Возможных включений известного слова в тексте не обнаружено")
+
+    for i in includes:
+        """ Обрабатываем текст с учетом подходящих включений известного слова"""
+        # Получаем частичную расшифровку, из букв известного слова
+        partial_key = get_partial_key(cipher_text[i : i + known_word_len], known_word)
+
+        # Частично декодированный текст с учетом букв из известного слова
+        partial_decoded_text = get_partial_decode(cipher_text, partial_key)  
     
         print(f'Исходный текст:')
         print(cipher_text)
         print(f'Предположительный текст:')
         print(partial_decoded_text)
-    
-    else:
-        print("Возможных включений известного слова в тексте не обнаружено")
 
-    # words = text_to_words(cipher_text)
-    words, words_d = text_to_words_known(cipher_text)
-    print(words)
-    for i in words_d:
-        print(f'{i}: {words_d[i]}')
+        # words = text_to_words(cipher_text)
+        words, words_d = text_to_words_known(cipher_text)
 
-    # дополнительное:
-    # 5. грузим словарь и строим шаблоны для всех слов
-    # 6. проходим по шифротексту, скользящим срезом проходим его в поиске слов
-    # 7. ?? строим с возможными вариантами замены букв (с учетом известного слова)
-    # 8. чистим словарь
-    # 9. собираем ключ
-    # get_all_patterns_from_dictionary()
+        # вывод списка предполагаемых слов и из потенциальных расшифровок из словаря
+        # print(words)
+        # for i in words_d:
+        #     print(f'{i}: {words_d[i]}')
 
-    # magic(cipher_text)
-    
+        # строим словарь
+        # чистим словарь
+        # собираем ключ
+        # расшифровываем сообщение
+        # записываем в results

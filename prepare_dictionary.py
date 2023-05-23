@@ -11,7 +11,7 @@ dictionaries = [
 ]
 
 
-def get_word_pattern(word: str):
+def get_word_pattern(word: str) -> str:
     """
     Определение повторяющихся букв в слове
     :param word: слово
