@@ -22,6 +22,7 @@ cipher_text = ''
 known_word = 'КРИПТОАНАЛИЗ'
 known_word_len = len(known_word)
 includes = []  # место для записии обнаруженных включений
+key_dictionaries = []  # место для потенциальных ключей
 
 
 partial_key = {}  # словарь соответствия шифрованных букв буквам из известного слова
@@ -260,6 +261,37 @@ def check_known_letters(word):
     return res, "".join(s)
 
 
+def create_keys(letter_mapping):
+    a = create_mapping_for_keys(letter_mapping)
+    return a
+
+
+def create_mapping_for_keys(letter_mapping):
+    for cipher_letter in LETTERS:
+        values = letter_mapping[cipher_letter]
+        if len(values) > 1:
+            for v in values:
+                new_mapping = copy.deepcopy(letter_mapping)
+                new_mapping[cipher_letter] = [v]
+                new_mapping = remove_solved_letters_from_mapping(new_mapping)
+
+                keys = create_mapping_for_keys(new_mapping)
+                if keys not in key_dictionaries:
+                    k = map_to_key(keys)
+                    key_dictionaries.append(k)
+    return letter_mapping
+
+
+def map_to_key(map):
+    key = ['_'] * len(LETTERS)
+
+    for l in LETTERS:
+        if len(map[l]) == 1:  # иначе для буквы нет расшифровки
+            key_index = LETTERS.find(map[l][0])
+            key[key_index] = l
+    res = ''.join(key)
+    return res
+
 if __name__ == "__main__":
     known_word_pattern = prepare_dictionary.get_word_pattern(known_word)
     print(f'{known_word}: {known_word_pattern}')
@@ -306,7 +338,15 @@ if __name__ == "__main__":
         # чистим словарь
         letter_mapping = remove_solved_letters_from_mapping(intersect_map)
 
-        a = 23
+        
         # собираем ключи
+        create_keys(letter_mapping)
+
+        with open('resources/keys.txt', 'w', encoding='utf-8') as file:
+            for i in key_dictionaries:
+                file.write(i)
+                file.write('\n')
+        
+        a = 23
         # расшифровываем сообщение
         # записываем в results
