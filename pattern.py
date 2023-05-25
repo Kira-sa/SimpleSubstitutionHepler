@@ -188,10 +188,14 @@ def text_to_words_known(text):
     while True:
         # если доползли до конца, то проверяем последнее слово
         if start + word_len > len(text):
-            if isLast:
-                break
-            else:
-                isLast = True
+            break
+            # if isLast:
+            #     break
+            # else:
+            #     isLast = True
+        
+        if word_len == 0:
+            break
 
         # берём слово
         word_candidate, word_candidate_pattern = from_text_to_word(text, start, word_len)  # определяем паттерн слова
@@ -287,6 +291,17 @@ def map_to_key(map):
     res = ''.join(key)
     return res
 
+
+def some_decode_magic(cipher_text, letter_map):
+    res = []
+    for l in cipher_text:
+        if len(letter_map[l.upper()]) == 1:
+            res.append(letter_map[l.upper()][0])
+        else:
+            res.append('-')
+    return ''.join(res)
+
+
 if __name__ == "__main__":
     known_word_pattern = prepare_dictionary.get_word_pattern(known_word)
     print(f'{known_word}: {known_word_pattern}')
@@ -307,8 +322,8 @@ if __name__ == "__main__":
     
         print(f'Исходный текст:')
         print(cipher_text)
-        print(f'Предположительный текст:')
-        print(partial_decoded_text)
+        # print(f'Предположительный текст:')
+        # print(partial_decoded_text)
 
         # words = text_to_words(cipher_text)
         words, words_d = text_to_words_known(cipher_text)
@@ -333,6 +348,10 @@ if __name__ == "__main__":
         # чистим словарь
         letter_mapping = remove_solved_letters_from_mapping(intersect_map)
 
+        some_result = some_decode_magic(cipher_text, letter_mapping)
+
+        # print("Расшифрованный текст однозначно определёнными буквами:")
+        print(some_result)
         
         # собираем ключи
         create_keys(letter_mapping)
