@@ -11,7 +11,7 @@ import os, re, copy
 
 import prepare_dictionary
 
-if not os.path.exists('resources/dictionary_1_patterns.py'):
+if not os.path.exists('resources/dictionary_1_patterns_new.py'):
     prepare_dictionary.main()
 
 from resources.dictionary_1_patterns import all_patterns
@@ -262,11 +262,6 @@ def check_known_letters(word):
 
 
 def create_keys(letter_mapping):
-    a = create_mapping_for_keys(letter_mapping)
-    return a
-
-
-def create_mapping_for_keys(letter_mapping):
     for cipher_letter in LETTERS:
         values = letter_mapping[cipher_letter]
         if len(values) > 1:
@@ -275,10 +270,10 @@ def create_mapping_for_keys(letter_mapping):
                 new_mapping[cipher_letter] = [v]
                 new_mapping = remove_solved_letters_from_mapping(new_mapping)
 
-                keys = create_mapping_for_keys(new_mapping)
-                if keys not in key_dictionaries:
-                    k = map_to_key(keys)
-                    key_dictionaries.append(k)
+                keys = create_keys(new_mapping)
+                key_str = map_to_key(keys)
+                if key_str not in key_dictionaries:
+                    key_dictionaries.append(key_str)
     return letter_mapping
 
 
