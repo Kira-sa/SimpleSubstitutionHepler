@@ -6,6 +6,7 @@ import pprint
 import os.path
 
 dictionaries = [
+    "resources/dictionary_0.txt",
     "resources/dictionary_1.txt",
     "resources/dictionary_2.txt"
 ]
