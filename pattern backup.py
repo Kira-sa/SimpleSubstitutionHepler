@@ -14,7 +14,7 @@ import prepare_dictionary
 if not os.path.exists('resources/dictionary_1_patterns_new.py'):
     prepare_dictionary.main()
 
-from resources.dictionary_1_patterns_new import all_patterns
+from resources.dictionary_1_patterns import all_patterns
 
 LETTERS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
 
