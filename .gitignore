@@ -1,6 +1,2 @@
 /.idea/
-/__pycache__/
-__pycache__/
-__pycache__/prepare_dictionary.cpython-311.pyc
-resources/__pycache__/dictionary_1_patterns.cpython-311.pyc
-.gitignore
+__pycache__
