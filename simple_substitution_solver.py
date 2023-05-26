@@ -6,44 +6,45 @@ if not os.path.exists('resources/dictionary_1_patterns.py'):
 from resources.dictionary_1_patterns import all_patterns
 
 
-LETTERS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
+# LETTERS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
+LETTERS = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
 
 
 def get_blank_cipher_letter_mapping():
     return {
-        'А': [],
-        'Б': [],
-        'В': [],
-        'Г': [],
-        'Д': [],
-        'Е': [],
-        'Ё': [],
-        'Ж': [],
-        'З': [],
-        'И': [],
-        'Й': [],
-        'К': [],
-        'Л': [],
-        'М': [],
-        'Н': [],
-        'О': [],
-        'П': [],
-        'Р': [],
-        'С': [],
-        'Т': [],
-        'У': [],
-        'Ф': [],
-        'Х': [],
-        'Ц': [],
-        'Ч': [],
-        'Ш': [],
-        'Щ': [],
-        'Ъ': [],
-        'Ы': [],
-        'Ь': [],
-        'Э': [],
-        'Ю': [],
-        'Я': [],
+        'а': [],
+        'б': [],
+        'в': [],
+        'г': [],
+        'д': [],
+        'е': [],
+        'ё': [],
+        'ж': [],
+        'з': [],
+        'и': [],
+        'й': [],
+        'к': [],
+        'л': [],
+        'м': [],
+        'н': [],
+        'о': [],
+        'п': [],
+        'р': [],
+        'с': [],
+        'т': [],
+        'у': [],
+        'ф': [],
+        'х': [],
+        'ц': [],
+        'ч': [],
+        'ш': [],
+        'щ': [],
+        'ъ': [],
+        'ы': [],
+        'ь': [],
+        'э': [],
+        'ю': [],
+        'я': [],
     }
 
 
@@ -75,7 +76,7 @@ def intersect_mappings(mapA, mapB):
 
 def read_text(file_path):
     with open(file_path, encoding='utf-8') as file:
-        return file.read().upper()
+        return file.read().lower()
 
 
 def get_all_includes(text: str, word: str, word_pattern: str):
@@ -126,7 +127,7 @@ def get_word_exists(words: list[str], word_re: str):
     """ Выбираем из списка слов те, которые соответствуют регулярке """
     res = []
     for word in words:
-        w = word.upper()
+        w = word.lower()
         q = re.fullmatch(pattern=word_re, string=w)
         if q is not None:
             res.append(w)
@@ -292,7 +293,7 @@ def solve_by_known_word(cipher_text_path: str, known_word: str, folder_for_resul
             new_map = get_blank_cipher_letter_mapping()
 
             for candidate in words_d[word]:
-                new_map = add_letters_to_mapping(new_map, word.upper(), candidate.upper())
+                new_map = add_letters_to_mapping(new_map, word.lower(), candidate.lower())
             
             intersect_map = intersect_mappings(intersect_map, new_map)
 
@@ -316,4 +317,4 @@ if __name__=="__main__":
     cipher_text_path = "resources/text.txt"
     folder_for_results = "results/"
 
-    solve_by_known_word(cipher_text_path, known_word, folder_for_results)
+    solve_by_known_word(cipher_text_path, known_word.lower(), folder_for_results)
