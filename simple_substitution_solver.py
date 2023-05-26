@@ -129,7 +129,7 @@ def get_word_exists(words: list[str], word_re: str):
         w = word.upper()
         q = re.fullmatch(pattern=word_re, string=w)
         if q is not None:
-            res.append(word)
+            res.append(w)
     return res
 
 
@@ -140,10 +140,14 @@ def text_to_words(text: str, partial_key: dict):
     word_len = 1
 
     isLast = False
+    isFullWord = False
 
     while True:
         if start + word_len > len(text):
-            break
+            if isLast:
+                break
+            else:
+                isLast = True
         
         # на всякий случай
         if word_len == 0:
@@ -151,30 +155,35 @@ def text_to_words(text: str, partial_key: dict):
         
         word_candidate, word_candidate_pattern = get_word_from_text(text, start, word_len)
 
+        if isFullWord:
+            # идём на уменьшение слова, т.к. уже упёрлись в потолок длины
+            known_letters, word_re = get_re_by_partial_key(word_candidate, partial_key)
+            # слова из словаря, соответствующие
+            dictionary_words = all_patterns[word_candidate_pattern]
+
+            # выбираем из словарных слов те, у которых на определённых местах
+            # соответствующие буквы
+
+            words_exists = get_word_exists(dictionary_words, word_re)
+            if len(words_exists) == 0:
+                word_len -= 1
+                continue
+
+            # записываем результат, смещаем поиск 
+            words_d[word_candidate] = words_exists
+            words.append(word_candidate)
+            start += word_len
+            word_len = 1
+            isFullWord = False
+            continue
+
         if word_candidate_pattern in all_patterns and not isLast:
             word_len += 1
+            continue
         else:
-            while True:
-                word_len -= 1
-                word_candidate, word_candidate_pattern = get_word_from_text(text, start, word_len)
-                known_letters, word_re = get_re_by_partial_key(word_candidate, partial_key)
+            word_len -= 1
+            isFullWord = True
 
-                # слова из словаря, соответствующие
-                dictionary_words = all_patterns[word_candidate_pattern]
-
-                # выбираем из словарных слов те, у которых на определённых местах
-                # соответствующие буквы
-
-                words_exists = get_word_exists(dictionary_words, word_re)
-                if len(words_exists) == 0:
-                    continue
-
-                # записываем результат, смещаем поиск 
-                words_d[word_candidate] = words_exists
-                words.append(word_candidate)
-                start += word_len
-                word_len = 1
-                break
     return words, words_d
 
 

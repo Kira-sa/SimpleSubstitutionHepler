@@ -318,10 +318,10 @@ if __name__ == "__main__":
         partial_key = get_partial_key(cipher_text[i : i + known_word_len], known_word)
 
         # Частично декодированный текст с учетом букв из известного слова
-        partial_decoded_text = get_partial_decode(cipher_text, partial_key)  
+        # partial_decoded_text = get_partial_decode(cipher_text, partial_key)  
     
-        print(f'Исходный текст:')
-        print(cipher_text)
+        # print(f'Исходный текст:')
+        # print(cipher_text)
         # print(f'Предположительный текст:')
         # print(partial_decoded_text)
 
