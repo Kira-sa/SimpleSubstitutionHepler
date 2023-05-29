@@ -5,6 +5,7 @@ import collections
 import argparse
 from pathlib import Path
 import sys
+from simple_substitution_solver import solve_by_known_word, solve_by_partial_key, LETTERS
 
 rus_frequencies = {}
 rus_vowels = ['о', 'е', 'а', 'и', 'у', 'я', 'ы', 'ю', 'э']
@@ -55,8 +56,8 @@ def count_trigrams(text: str) -> dict:
 
 
 def write_statistics(letter_fr: dict, bigrams: dict, trigrams: dict) -> None:
-    """Выводит вычисленные частоты в файл statistics.txt"""
-    with open('statistics_3.txt', mode='w', encoding='utf-8') as file:
+    """Выводит вычисленные частоты в файл statistics_1.txt"""
+    with open('statistics_2.txt', mode='w', encoding='utf-8') as file:
         file.write('Частоты букв в шифротексте:\n')
         for key, value in letter_fr.items():
             file.write(f'{key} {value}\n')
@@ -69,7 +70,6 @@ def write_statistics(letter_fr: dict, bigrams: dict, trigrams: dict) -> None:
 
 
 def frequency_analysis(letter_fr: list, bigrams: list, trigrams: list, text: str):
-    print(f"Частотный анализ выполняется")
     max_freq_letter = letter_fr[0][0]
     vowels.append(max_freq_letter)
     used_bigrams = del_rare_bi_or_trigrams(bigrams)
@@ -89,6 +89,7 @@ def frequency_analysis(letter_fr: list, bigrams: list, trigrams: list, text: str
     print(f'Согласные буквы: {consonants}')
     print(try_decode(text))
 
+
 def del_rare_bi_or_trigrams(bt_grams: list) -> list:
     """Удаляет из списка биграмм/триграмм редко встречающиеся биграммы/триграммы"""
     used_bt_grams = []
@@ -98,16 +99,16 @@ def del_rare_bi_or_trigrams(bt_grams: list) -> list:
     return used_bt_grams
 
 
-def complement_vowels(bgrms: list, l_fr: list):
+def complement_vowels(bgrms: list, l_fr: list) -> None:
     """Дополняет список гласных букв на основе списка известных согласных букв"""
     for letter in consonants:
         for el in bgrms:
             if letter in el[0]:
                 # print(el)
                 b = el[0]
-                if b[0] == letter and b[1] not in vowels:
+                if b[0] == letter and b[1] not in vowels and b[1] not in consonants:
                     vowels.append(b[1])
-                elif b[1] == letter and b[0] not in vowels:
+                elif b[1] == letter and b[0] not in vowels and b[1] not in consonants:
                     vowels.append(b[0])
     sort_by_usage(vowels, l_fr)
 
@@ -118,9 +119,9 @@ def complement_consonants(bgrms: list, l_fr: list):
         for el in bgrms:
             if letter in el[0]:
                 b = el[0]
-                if b[0] == letter and b[1] not in consonants:
+                if b[0] == letter and b[1] not in consonants and b[1] not in vowels:
                     consonants.append(b[1])
-                elif b[1] == letter and b[0] not in consonants:
+                elif b[1] == letter and b[0] not in consonants and b[1] not in vowels:
                     consonants.append(b[0])
     sort_by_usage(consonants, l_fr)
 
@@ -156,19 +157,54 @@ def try_decode(text: str) -> str:
     return ''.join(res)
 
 
-def chosen_plaintext_attack(word: str):
-    print(f"В тексте есть слово {word}\n")
+def chosen_plaintext_attack(text: str, known_word: str):
+    folder_for_results = "results/"
+    solve_by_known_word(text, known_word.lower(), folder_for_results)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('file', help='Имя файла с зашифрованным текстом', type=int)
+    parser.add_argument('file', help='Имя файла с зашифрованным текстом', type=str)
     return parser.parse_args()
 
 
+def by_hands_processing(cipher_text):
+    key_dictionary = {}
+    folder_for_results = "results/"
+    
+    print("Доступные команды: печать (для вывода возможной расшифровки текста), словарь (для вывода введенных пользователем пар букв)")
+    print("Введите команду или пару букв 'шифр расшифровка'")
+    while True:
+        command = input()
+        if command == "печать":
+            if len(key_dictionary) > 1:
+                solve_by_partial_key(cipher_text, key_dictionary, folder_for_results)
+            else:
+                print("Выводить в печать нечего")
+                continue
+        elif command == "словарь":
+            print(key_dictionary)
+        elif len(command) == 3:
+            # принята пара букв через пробел, запоминаем
+            try:
+                key, value = command.split(' ')
+                key_dictionary[key] = value
+            except:
+                print("Команда не распознана")
+        elif len(command) == 1 and command in LETTERS:
+            # убираем букву из словаря соответствий
+            if command in key_dictionary.keys():
+                key_dictionary.pop(command)
+        else:
+            print("Команда не распознана")
+
+
 if __name__ == '__main__':
-    args = parse_args()
-    file_name = Path.cwd() / 'resources' / ('%d.txt' % args.file)
+    # args = parse_args()
+    aa = "text_1"
+    file_name = Path.cwd() / 'resources' / ('%s.txt' % aa)
+    
+    # file_name = Path.cwd() / 'resources' / ('%s.txt' % args.file)
     if not file_name.exists() or not file_name.is_file():
         print("Файл не найден", file=sys.stderr)
         sys.exit(1)
@@ -180,26 +216,38 @@ if __name__ == '__main__':
         write_statistics(letter_frequencies, bigrams, trigrams)
         print(f"Файл {file_name} успешно считан.")
         print(f"Выберите действие:\n"
-              f"1 - Выполнить частотный анализ\n"
-              f"2 - Ввести наиболее вероятное слово\n"
-              f"3 - Завершить программу\n")
+              f"1 - Ввести наиболее вероятное слово\n"
+              f"2 - Выполнить частотный анализ\n"
+              f"3 - Выполнить ручной подбор\n"
+              f"4 - Завершить программу")
         running = True
         while running:
             try:
                 answer = int(input())
             except ValueError:
-                print(f"Кажется, это не число\n")
-                exit()
+                print(f"Кажется, это не число")
+                continue
             if answer == 1:
+                print("Введите слово: ")
+                word = input()
+                count = 0
+                for i in range(len(word) - 1):
+                    if word[i] not in rus_vowels and word[i] not in rus_consonants:
+                        count += 1
+                if count != 0:
+                    print("Слово должно состоять из букв русского алфавита")
+                    exit()
+                else:
+                    chosen_plaintext_attack(cipher_text, word)
+                    exit()
+            elif answer == 2:
                 frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()),
                                    cipher_text)
                 exit()
-            elif answer == 2:
-                print("Введите слово: ")
-                word = input().lower()
-                chosen_plaintext_attack(word)
-                exit()
             elif answer == 3:
+                by_hands_processing(cipher_text)
+                exit()
+            elif answer == 4:
                 exit()
             else:
                 print("Такой команды я не знаю")

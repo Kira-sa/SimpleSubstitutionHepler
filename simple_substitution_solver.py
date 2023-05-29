@@ -1,10 +1,10 @@
 import os, re, copy
-
 import prepare_dictionary
+import pprint
+
 if not os.path.exists('resources/dictionary_1_patterns.py'):
     prepare_dictionary.main()
 from resources.dictionary_1_patterns import all_patterns
-
 
 # LETTERS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
 LETTERS = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
@@ -57,8 +57,7 @@ def add_letters_to_mapping(letter_mapping, cipher_word, candidate):
 
 
 def intersect_mappings(mapA, mapB):
-    # """ объединяем два словаря, добавляем только общие для обоих записи """
-    """ объединяем два словаря"""
+    """Объединяет два словаря, добавляем только общие записи"""
     result = get_blank_cipher_letter_mapping()
     for letter in LETTERS:
         if mapA[letter] == []:
@@ -74,43 +73,38 @@ def intersect_mappings(mapA, mapB):
     return result
 
 
-def read_text(file_path):
-    with open(file_path, encoding='utf-8') as file:
-        return file.read().lower()
-
-
 def get_all_includes(text: str, word: str, word_pattern: str):
-    """ Собираем все уникальные подстроки, соответствующие шаблону известного слова"""
+    """ Собирает все уникальные подстроки, соответствующие шаблону известного слова"""
     l = []
     word_len = len(word)
     for i in range(len(text) - word_len + 1):
         sub = text[i: i + word_len]
         sub_pattern = prepare_dictionary.get_word_pattern(sub)
-        # print(f'{i}  {sub}: {sub_pattern}')  # вывод всех построенных шаблонов 
+        # print(f'{i}  {sub}: {sub_pattern}')  # вывод всех построенных шаблонов
         if sub_pattern == word_pattern:
             l.append(i)
 
     q = {}
-    if len(l)>0:
+    if len(l) > 0:
         print(f"Обнаруженные комбинации букв, соответствующие шаблону заданного слова '{word}'")
 
     for i in l:
-        w = text[i:i+len(word)]
-        print(f"{i+1}: {w}")
+        w = text[i:i + len(word)]
+        print(f"{i + 1}: {w}")
 
         if w not in q.values():
-            q[i] = text[i:i+len(word)]
+            q[i] = text[i:i + len(word)]
     return q.keys()
 
 
 def get_word_from_text(text: str, start: int, wordlen: int):
-    word = text[start:start+wordlen]
+    word = text[start:start + wordlen]
     pattern = prepare_dictionary.get_word_pattern(word)
     return word, pattern
 
 
 def get_re_by_partial_key(word: str, partial_key: dict):
-    """ Строим шаблон для регулярки на основании проверяемого 
+    """Строим шаблон для регулярки на основании проверяемого
     слова и 'известных' расшифровок букв"""
     res = {}
     s = []
@@ -149,11 +143,11 @@ def text_to_words(text: str, partial_key: dict):
                 break
             else:
                 isLast = True
-        
+
         # на всякий случай
         if word_len == 0:
             break
-        
+
         word_candidate, word_candidate_pattern = get_word_from_text(text, start, word_len)
 
         if isFullWord:
@@ -196,8 +190,7 @@ def get_partial_key(encoded_word: str, known_word: str):
 
 
 def remove_solved_letters_from_mapping(letter_mapping):
-    """ 
-    исключаем потенциальные буквы из вариантов если уверены 
+    """ Исключаем потенциальные буквы из вариантов, если уверены,
     что они однозначно могут принадлежать конкретным шифрам 
     """
     letter_mapping = copy.deepcopy(letter_mapping)
@@ -220,7 +213,7 @@ def remove_solved_letters_from_mapping(letter_mapping):
                     letter_mapping[cipher_letter].remove(s)
                     if len(letter_mapping[cipher_letter]) == 1:
                         loop_again = True
-    
+
     return letter_mapping
 
 
@@ -262,29 +255,26 @@ def create_keys(letter_mapping):
                     if key_str not in key_dictionaries:
                         key_dictionaries.append(key_str)
         return letter_mapping
-    
+
     create_keys_worker(letter_mapping)
     return key_dictionaries
 
 
-def solve_by_known_word(cipher_text_path: str, known_word: str, folder_for_results: str) -> None:
-    cipher_text = read_text(cipher_text_path)
+def solve_by_known_word(cipher_text: str, known_word: str, folder_for_results: str) -> None:
     known_word_pattern = prepare_dictionary.get_word_pattern(known_word)
     print(f"{known_word}: {known_word_pattern}")
-
     includes = get_all_includes(cipher_text, known_word, known_word_pattern)
 
     if len(includes) == 0:
         print(f"Возможных включений слова {known_word} в тексте не обнаружено")
-    
     for i in includes:
-        """ Обрабатываем текст с учетом подходящих включений известного слова"""
+        """Обрабатываем текст с учетом подходящих включений известного слова"""
         # предполагаемая шифровка известного слова
-        known_word_encoded = cipher_text[i : i + len(known_word)]
+        known_word_encoded = cipher_text[i: i + len(known_word)]
         # словарь соответствий зашифрованных букв к расшифрованным
         partial_key = get_partial_key(known_word_encoded, known_word)
         words, words_d = text_to_words(cipher_text, partial_key)
-
+        # print(words_d)
         # основной словарь соответствий
         intersect_map = get_blank_cipher_letter_mapping()
 
@@ -294,12 +284,13 @@ def solve_by_known_word(cipher_text_path: str, known_word: str, folder_for_resul
 
             for candidate in words_d[word]:
                 new_map = add_letters_to_mapping(new_map, word.lower(), candidate.lower())
-            
+
             intersect_map = intersect_mappings(intersect_map, new_map)
 
         # чистим словарь
         letter_mapping = remove_solved_letters_from_mapping(intersect_map)
-
+        print(pprint.pformat(letter_mapping))
+        print(cipher_text)
         # Показываем тест, расшифрованный однозначно определёнными буквами
         some_result = some_decode_magic(cipher_text, letter_mapping)
         print(some_result)
@@ -312,9 +303,31 @@ def solve_by_known_word(cipher_text_path: str, known_word: str, folder_for_resul
                 file.write('\n')
 
 
-if __name__=="__main__":
-    known_word = "КРИПТОАНАЛИЗ"
-    cipher_text_path = "resources/text.txt"
-    folder_for_results = "results/"
+def solve_by_partial_key(cipher_text: str, partial_key: dict, folder_for_results: str) -> None:
+    words, words_d = text_to_words(cipher_text, partial_key)
+    # основной словарь соответствий
+    intersect_map = get_blank_cipher_letter_mapping()
 
-    solve_by_known_word(cipher_text_path, known_word.lower(), folder_for_results)
+    # строим словарь
+    for word in words_d:
+        new_map = get_blank_cipher_letter_mapping()
+
+        for candidate in words_d[word]:
+            new_map = add_letters_to_mapping(new_map, word.lower(), candidate.lower())
+
+        intersect_map = intersect_mappings(intersect_map, new_map)
+
+    # чистим словарь
+    letter_mapping = remove_solved_letters_from_mapping(intersect_map)
+    print(pprint.pformat(letter_mapping))
+    print(cipher_text)
+    # Показываем тест, расшифрованный однозначно определёнными буквами
+    some_result = some_decode_magic(cipher_text, letter_mapping)
+    print(some_result)
+
+    keys = create_keys(letter_mapping)
+
+    with open(f'{folder_for_results}hand_solved_keys.txt', 'w', encoding='utf-8') as file:
+        for i in keys:
+            file.write(i)
+            file.write('\n')

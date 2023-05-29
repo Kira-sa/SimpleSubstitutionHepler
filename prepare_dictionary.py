@@ -6,18 +6,13 @@ import pprint
 import os.path
 
 dictionaries = [
-    "resources/dictionary_0.txt",
     "resources/dictionary_1.txt",
     "resources/dictionary_2.txt"
 ]
 
 
 def get_word_pattern(word: str) -> str:
-    """
-    Определение повторяющихся букв в слове
-    :param word: слово
-    :return: шаблон повторяющихся букв
-    """
+    """Определение повторяющихся букв в слове. Возвращает шаблон повторяющихся букв"""
     word = word.upper()
     next_number = 0
     letters = {}
@@ -65,6 +60,5 @@ def prepare_dictionaries():
 def main():
     prepare_dictionaries()
 
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
