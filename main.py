@@ -168,20 +168,36 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def decode_by_key_dictionary(cipher_text, key_dict):
+    res = []
+    if len(key_dict) == 0:
+        print("Перечень расшифрованных букв пуст")
+    for i in cipher_text:
+        if i in key_dict:
+            res += key_dict[i]
+        else:
+            res += '-'
+    return ''.join(res)
+
+
 def by_hands_processing(cipher_text):
     key_dictionary = {}
     folder_for_results = "results/"
     
-    print("Доступные команды:\n анализ - для проведения частотного анализа текста\n печать - для вывода возможной расшифровки с перебором по словарю\n словарь - для вывода введенных пользователем пар букв)")
+    print("Доступные команды:\n анализ - для проведения частотного анализа текста\n печать - для вывода возможной расшифровки с перебором по словарю\n словарь - для вывода введенных пользователем пар букв\n расшифровка - для вывода расшифровки с применением указанных пар букв")
     print("Введите команду или пару букв 'шифр расшифровка'")
     while True:
         command = input()
         if command == "печать":
             if len(key_dictionary) > 1:
+                print(cipher_text)
                 solve_by_partial_key(cipher_text, key_dictionary, folder_for_results)
             else:
                 print("Выводить в печать нечего")
                 continue
+        elif command == "расшифровка":
+            print(cipher_text)
+            print(decode_by_key_dictionary(cipher_text, key_dictionary))
         elif command == "словарь":
             print(key_dictionary)
         elif command == "анализ":
