@@ -172,7 +172,7 @@ def by_hands_processing(cipher_text):
     key_dictionary = {}
     folder_for_results = "results/"
     
-    print("Доступные команды: печать (для вывода возможной расшифровки текста), словарь (для вывода введенных пользователем пар букв)")
+    print("Доступные команды:\n анализ - для проведения частотного анализа текста\n печать - для вывода возможной расшифровки с перебором по словарю\n словарь - для вывода введенных пользователем пар букв)")
     print("Введите команду или пару букв 'шифр расшифровка'")
     while True:
         command = input()
@@ -184,6 +184,13 @@ def by_hands_processing(cipher_text):
                 continue
         elif command == "словарь":
             print(key_dictionary)
+        elif command == "анализ":
+            letter_frequencies = count_letter_frequencies(cipher_text)
+            bigrams = count_bigrams(cipher_text)
+            trigrams = count_trigrams(cipher_text)
+            frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()), cipher_text)
+        elif command == "выход":
+            return
         elif len(command) == 3:
             # принята пара букв через пробел, запоминаем
             try:
@@ -201,7 +208,7 @@ def by_hands_processing(cipher_text):
 
 if __name__ == '__main__':
     # args = parse_args()
-    aa = "text_1"
+    aa = "text_2"
     file_name = Path.cwd() / 'resources' / ('%s.txt' % aa)
     
     # file_name = Path.cwd() / 'resources' / ('%s.txt' % args.file)
