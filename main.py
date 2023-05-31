@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 import sys
 from simple_substitution_solver import solve_by_known_word, solve_by_partial_key, LETTERS
+import permutations 
 
 rus_frequencies = {}
 rus_vowels = ['о', 'е', 'а', 'и', 'у', 'я', 'ы', 'ю', 'э']
@@ -87,7 +88,7 @@ def frequency_analysis(letter_fr: list, bigrams: list, trigrams: list, text: str
 
     print(f'Гласные буквы: {vowels}')
     print(f'Согласные буквы: {consonants}')
-    print(try_decode(text))
+    # print(try_decode(text))
 
 
 def del_rare_bi_or_trigrams(bt_grams: list) -> list:
@@ -180,6 +181,18 @@ def decode_by_key_dictionary(cipher_text, key_dict):
     return ''.join(res)
 
 
+def try_permutations(cipher_text, voe, cons):
+    deciphers = []
+    # построить перестановками все варианты ключей
+    all_keys = permutations.main(voe, cons)
+    # построить расшифровки по ключам
+    for i in all_keys:
+        q = decode_by_key_dictionary(cipher_text, i)
+        deciphers.append(q)
+    
+    return deciphers
+
+
 def by_hands_processing(cipher_text):
     key_dictionary = {}
     folder_for_results = "results/"
@@ -205,6 +218,27 @@ def by_hands_processing(cipher_text):
             bigrams = count_bigrams(cipher_text)
             trigrams = count_trigrams(cipher_text)
             frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()), cipher_text)
+        elif command == "перестановки":
+            letter_frequencies = count_letter_frequencies(cipher_text)
+            bigrams = count_bigrams(cipher_text)
+            trigrams = count_trigrams(cipher_text)
+            frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()), cipher_text)
+            deciphers = try_permutations(cipher_text, vowels, consonants)
+            
+            with open('results/deciphers.txt', 'w', encoding='utf-8') as f:
+                for i in deciphers:
+                    f.write(i)
+                    f.write('\n')
+
+            pos = 0
+            step = 10
+            for key, val in enumerate(deciphers):
+                print(val)
+                pos += 1
+                if pos % step == 0:
+                    comm = input("Нажмите enter чтобы продолжить вывод, любую команду чтобы прервать")
+                    if len(comm) != 0:
+                        break
         elif command == "выход":
             return
         elif len(command) == 3:
