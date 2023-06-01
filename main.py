@@ -109,7 +109,7 @@ def complement_vowels(bgrms: list, l_fr: list) -> None:
                 b = el[0]
                 if b[0] == letter and b[1] not in vowels and b[1] not in consonants:
                     vowels.append(b[1])
-                elif b[1] == letter and b[0] not in vowels and b[1] not in consonants:
+                elif b[1] == letter and b[0] not in vowels and b[0] not in consonants:
                     vowels.append(b[0])
     sort_by_usage(vowels, l_fr)
 
@@ -122,7 +122,7 @@ def complement_consonants(bgrms: list, l_fr: list):
                 b = el[0]
                 if b[0] == letter and b[1] not in consonants and b[1] not in vowels:
                     consonants.append(b[1])
-                elif b[1] == letter and b[0] not in consonants and b[1] not in vowels:
+                elif b[1] == letter and b[0] not in consonants and b[0] not in vowels:
                     consonants.append(b[0])
     sort_by_usage(consonants, l_fr)
 
