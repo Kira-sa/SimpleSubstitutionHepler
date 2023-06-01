@@ -71,6 +71,8 @@ def write_statistics(letter_fr: dict, bigrams: dict, trigrams: dict) -> None:
 
 
 def frequency_analysis(letter_fr: list, bigrams: list, trigrams: list, text: str):
+    vowels.clear()
+    consonants.clear()
     max_freq_letter = letter_fr[0][0]
     vowels.append(max_freq_letter)
     used_bigrams = del_rare_bi_or_trigrams(bigrams)
@@ -197,7 +199,13 @@ def by_hands_processing(cipher_text):
     key_dictionary = {}
     folder_for_results = "results/"
     
-    print("Доступные команды:\n анализ - для проведения частотного анализа текста\n печать - для вывода возможной расшифровки с перебором по словарю\n словарь - для вывода введенных пользователем пар букв\n расшифровка - для вывода расшифровки с применением указанных пар букв")
+    print("Доступные команды:\n "
+          "анализ - для проведения частотного анализа текста\n "
+          "печать - для вывода возможной расшифровки с перебором по словарю\n "
+          "словарь - для вывода введенных пользователем пар букв\n "
+          "расшифровка - для вывода расшифровки с применением указанных пар букв\n "
+          "перестановки - для подбора перестановок с учётом введенных пользователем пар букв\n "
+          "выход - для завершения программы")
     print("Введите команду или пару букв 'шифр расшифровка'")
     while True:
         command = input("Введите команду: ")
@@ -236,7 +244,7 @@ def by_hands_processing(cipher_text):
                 print(val)
                 pos += 1
                 if pos % step == 0:
-                    comm = input("Нажмите enter чтобы продолжить вывод, любую команду чтобы прервать")
+                    comm = input("Нажмите enter, чтобы продолжить вывод, любую команду чтобы прервать")
                     if len(comm) != 0:
                         break
         elif command == "выход":
