@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 import sys
 from simple_substitution_solver import solve_by_known_word, solve_by_partial_key, LETTERS
-import permutations 
+import permutations
 
 rus_frequencies = {}
 rus_vowels = ['о', 'е', 'а', 'и', 'у', 'я', 'ы', 'ю', 'э']
@@ -183,12 +183,7 @@ def decode_by_key_dictionary(cipher_text, key_dict):
     return ''.join(res)
 
 
-
-
-def by_hands_processing(cipher_text):
-    key_dictionary = {}
-    folder_for_results = "results/"
-    
+def print_help():
     print("Доступные команды:\n "
           "анализ - для проведения частотного анализа текста\n "
           "печать - для вывода возможной расшифровки с перебором по словарю\n "
@@ -197,12 +192,28 @@ def by_hands_processing(cipher_text):
           "перестановки - для подбора перестановок с учётом введенных пользователем пар букв\n "
           "выход - для завершения программы")
     print("Введите команду или пару букв 'шифр расшифровка'")
+
+
+def by_hands_processing(cipher_text):
+    key_dictionary = {}
+    folder_for_results = "results/"
+    print_help()
     while True:
         command = input("Введите команду: ")
         if command == "печать":
             if len(key_dictionary) > 1:
                 print(cipher_text)
                 solve_by_partial_key(cipher_text, key_dictionary, folder_for_results)
+                # print("Введите слово: ")
+                # word = input()
+                # count = 0
+                # for i in range(len(word) - 1):
+                #     if word[i] not in rus_vowels and word[i] not in rus_consonants:
+                #         count += 1
+                # if count != 0:
+                #     print("Слово должно состоять из букв русского алфавита")
+                # else:
+                #     solve_by_known_word(cipher_text, word.lower(), folder_for_results)
             else:
                 print("Выводить в печать нечего")
                 continue
@@ -215,14 +226,16 @@ def by_hands_processing(cipher_text):
             letter_frequencies = count_letter_frequencies(cipher_text)
             bigrams = count_bigrams(cipher_text)
             trigrams = count_trigrams(cipher_text)
-            frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()), cipher_text)
+            frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()),
+                               cipher_text)
         elif command == "перестановки":
             letter_frequencies = count_letter_frequencies(cipher_text)
             bigrams = count_bigrams(cipher_text)
             trigrams = count_trigrams(cipher_text)
-            frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()), cipher_text)
+            frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()),
+                               cipher_text)
             deciphers = permutations.try_permutations(cipher_text, vowels, consonants, key_dictionary)
-            
+
             with open('results/deciphers.txt', 'w', encoding='utf-8') as f:
                 for i in deciphers:
                     f.write(i)
@@ -234,9 +247,10 @@ def by_hands_processing(cipher_text):
                 print(val)
                 pos += 1
                 if pos % step == 0:
-                    comm = input("Нажмите enter, чтобы продолжить вывод, любую команду чтобы прервать")
+                    comm = input("Нажмите enter, чтобы продолжить вывод, любую команду чтобы прервать: ")
                     if len(comm) != 0:
                         break
+            print_help()
         elif command == "выход":
             return
         elif len(command) == 3:
@@ -255,11 +269,11 @@ def by_hands_processing(cipher_text):
 
 
 if __name__ == '__main__':
-    # args = parse_args()
-    aa = "text_2"
-    file_name = Path.cwd() / 'resources' / ('%s.txt' % aa)
-    
-    # file_name = Path.cwd() / 'resources' / ('%s.txt' % args.file)
+    args = parse_args()
+    # aa = "text_2"
+    # file_name = Path.cwd() / 'resources' / ('%s.txt' % aa)
+
+    file_name = Path.cwd() / 'resources' / ('%s.txt' % args.file)
     if not file_name.exists() or not file_name.is_file():
         print("Файл не найден", file=sys.stderr)
         sys.exit(1)
