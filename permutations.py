@@ -18,10 +18,13 @@ def decode_by_key_dictionary(cipher_text, key_dict):
     return ''.join(res)
 
 
-def try_permutations(cipher_text, voe, cons):
+def try_permutations(cipher_text, voe, cons, known_letters):
     deciphers = []
     # построить перестановками все варианты ключей
-    all_keys = get_all_permutations(voe, cons)
+    if len(known_letters) == 0:
+        all_keys = get_all_permutations(voe, cons)
+    else:
+        all_keys = get_all_permutations_by_known(voe, cons, known_letters)
     # построить расшифровки по ключам
     for i in all_keys:
         q = decode_by_key_dictionary(cipher_text, i)

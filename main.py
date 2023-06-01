@@ -221,7 +221,7 @@ def by_hands_processing(cipher_text):
             bigrams = count_bigrams(cipher_text)
             trigrams = count_trigrams(cipher_text)
             frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()), cipher_text)
-            deciphers = permutations.try_permutations(cipher_text, vowels, consonants)
+            deciphers = permutations.try_permutations(cipher_text, vowels, consonants, key_dictionary)
             
             with open('results/deciphers.txt', 'w', encoding='utf-8') as f:
                 for i in deciphers:
