@@ -1,6 +1,5 @@
 import itertools
 
-
 rus_vowels = ['о', 'е', 'а', 'и', 'у', 'я', 'ы', 'ю', 'э']
 rus_consonants = ['н', 'т', 'с', 'р', 'в', 'л', 'к', 'м', 'д', 'п', 'з', 'ь', 'б', 'г', 'ч', 'й', 'х', 'ж', 'ш', 'ц',
                   'щ', 'ф']
@@ -30,6 +29,7 @@ def try_permutations(cipher_text, voe, cons, known_letters):
         q = decode_by_key_dictionary(cipher_text, i)
         deciphers.append(q)
     return deciphers
+
 
 def get_all_perm(letters, rus_letters):
     count = min(len(letters), len(rus_letters))
@@ -90,11 +90,3 @@ def get_all_permutations_by_known(vowels, consonants, known_l):
                 result.append(d)
     return result
 
-
-if __name__ == "__main__":
-    vowels = ['з', 'и', 'э', 'д']
-    consonants = ['г', 'с', 'л', 'т', 'п', 'у', 'м', 'ф']
-    known_letters = {'з': 'о', 'и': 'а', 'г': 'н'}
-    # result_key = get_all_permutations(vowels, consonants)
-    res = get_all_permutations_by_known(vowels, consonants, known_letters)
-    a = 23

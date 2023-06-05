@@ -5,6 +5,9 @@ import collections
 import argparse
 from pathlib import Path
 import sys
+import re
+import itertools
+
 from simple_substitution_solver import solve_by_known_word, solve_by_partial_key, LETTERS
 import permutations
 
@@ -183,52 +186,53 @@ def decode_by_key_dictionary(cipher_text, key_dict):
     return ''.join(res)
 
 
-def print_help():
+def print_help_1():
+    print(f"Выберите действие:\n"
+          f"1 - Ввести наиболее вероятное слово\n"
+          f"2 - Выполнить ручной подбор\n"
+          f"3 - Завершить программу")
+
+
+def print_help_2():
     print("Доступные команды:\n "
-          "анализ - для проведения частотного анализа текста\n "
-          "печать - для вывода возможной расшифровки с перебором по словарю\n "
-          "словарь - для вывода введенных пользователем пар букв\n "
-          "расшифровка - для вывода расшифровки с применением указанных пар букв\n "
-          "перестановки - для подбора перестановок с учётом введенных пользователем пар букв\n "
-          "выход - для завершения программы")
-    print("Введите команду или пару букв 'шифр расшифровка'")
+          "1 - провести частотный анализ текста\n "
+          "2 - вывод введенных пользователем пар букв\n "
+          "3 - вывод расшифровки с применением указанных пар букв\n "
+          "4 - ввести множества букв шифртекста и их возможных расшифровок\n "
+          "5 - подбор перестановок с учётом введенных пользователем пар букв\n "
+          "6 - вывод возможной расшифровки с перебором по словарю\n "
+          "7 - вернуться на предыдущий уровень")
+    print("Введите номер команды или пару букв 'шифр расшифровка'")
 
 
 def by_hands_processing(cipher_text):
     key_dictionary = {}
     folder_for_results = "results/"
-    print_help()
+    print_help_2()
     while True:
         command = input("Введите команду: ")
-        if command == "печать":
+        if command == "6":
             if len(key_dictionary) > 1:
                 print(cipher_text)
                 solve_by_partial_key(cipher_text, key_dictionary, folder_for_results)
-                # print("Введите слово: ")
-                # word = input()
-                # count = 0
-                # for i in range(len(word) - 1):
-                #     if word[i] not in rus_vowels and word[i] not in rus_consonants:
-                #         count += 1
-                # if count != 0:
-                #     print("Слово должно состоять из букв русского алфавита")
-                # else:
-                #     solve_by_known_word(cipher_text, word.lower(), folder_for_results)
             else:
-                print("Выводить в печать нечего")
+                print("Выводить в печать нечего.")
                 continue
-        elif command == "расшифровка":
+        elif command == "3":
             print(cipher_text)
             print(decode_by_key_dictionary(cipher_text, key_dictionary))
-        elif command == "словарь":
+        elif command == "2":
             print(key_dictionary)
-        elif command == "анализ":
+        elif command == "1":
             letter_frequencies = count_letter_frequencies(cipher_text)
             bigrams = count_bigrams(cipher_text)
             trigrams = count_trigrams(cipher_text)
             frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()),
                                cipher_text)
-        elif command == "перестановки":
+        elif command == "4":
+            do_sets()
+            print_help_2()
+        elif command == "5":
             letter_frequencies = count_letter_frequencies(cipher_text)
             bigrams = count_bigrams(cipher_text)
             trigrams = count_trigrams(cipher_text)
@@ -250,8 +254,8 @@ def by_hands_processing(cipher_text):
                     comm = input("Нажмите enter, чтобы продолжить вывод, любую команду чтобы прервать: ")
                     if len(comm) != 0:
                         break
-            print_help()
-        elif command == "выход":
+            print_help_2()
+        elif command == "7":
             return
         elif len(command) == 3:
             # принята пара букв через пробел, запоминаем
@@ -259,13 +263,50 @@ def by_hands_processing(cipher_text):
                 key, value = command.split(' ')
                 key_dictionary[key] = value
             except:
-                print("Команда не распознана")
+                print("Команда не распознана.")
         elif len(command) == 1 and command in LETTERS:
             # убираем букву из словаря соответствий
             if command in key_dictionary.keys():
                 key_dictionary.pop(command)
         else:
-            print("Команда не распознана")
+            print("Команда не распознана.")
+
+
+def do_sets():
+    print("\nВведите множество шифробукв через пробел и множество расшифровок через пробел.\n"
+          "Разделите множества знаком дефис. Пример: а б в - п с о\n"
+          "Введите 1 для возвращения на предыдущий уровень.")
+    while True:
+        str = input("Введите команду: ").strip()
+        if str == "1":
+            break
+        if "-" not in str:
+            print("Команда должна содержать дефис (-).")
+            continue
+        else:
+            letters_sets = re.split("[ -]+", str)
+            count = 0
+            for l in letters_sets:
+                if l not in rus_vowels and l not in rus_consonants:
+                    count += 1
+            if count != 0:
+                print("Множества должны состоять из букв русского алфавита.")
+                continue
+            if len(letters_sets) % 2 != 0:
+                print("Множества шифробукв и расшифровок должны быть одинаковой длины.")
+                continue
+            if len(letters_sets) < 4:
+                print("В каждом из множеств должно быть не менее двух символов.")
+                continue
+            else:
+                cipher_letters = letters_sets[:len(letters_sets) // 2]
+                decipher_letters = letters_sets[len(letters_sets) // 2:]
+                print(cipher_letters)
+                print(decipher_letters)
+                perm = list(itertools.permutations(decipher_letters))
+                print(perm)
+                # res = []
+                # for i in perm:
 
 
 if __name__ == '__main__':
@@ -284,17 +325,13 @@ if __name__ == '__main__':
         trigrams = count_trigrams(cipher_text)
         write_statistics(letter_frequencies, bigrams, trigrams)
         print(f"Файл {file_name} успешно считан.")
-        print(f"Выберите действие:\n"
-              f"1 - Ввести наиболее вероятное слово\n"
-              f"2 - Выполнить частотный анализ\n"
-              f"3 - Выполнить ручной подбор\n"
-              f"4 - Завершить программу")
+        print_help_1()
         running = True
         while running:
             try:
                 answer = int(input())
             except ValueError:
-                print(f"Кажется, это не число")
+                print(f"Кажется, это не число.")
                 continue
             if answer == 1:
                 print("Введите слово: ")
@@ -304,19 +341,16 @@ if __name__ == '__main__':
                     if word[i] not in rus_vowels and word[i] not in rus_consonants:
                         count += 1
                 if count != 0:
-                    print("Слово должно состоять из букв русского алфавита")
-                    exit()
+                    print("Слово должно состоять из букв русского алфавита.")
+                    continue
                 else:
                     chosen_plaintext_attack(cipher_text, word)
-                    exit()
+                    continue
             elif answer == 2:
-                frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()),
-                                   cipher_text)
-                exit()
-            elif answer == 3:
                 by_hands_processing(cipher_text)
-                exit()
-            elif answer == 4:
+                print_help_1()
+                continue
+            elif answer == 3:
                 exit()
             else:
-                print("Такой команды я не знаю")
+                print("Такой команды я не знаю.")
