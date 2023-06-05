@@ -87,6 +87,64 @@ def get_all_permutations_by_known(vowels, consonants, known_l):
                 if l in d and known_l[l] != d[l]:
                     isValid = False
             if isValid:
+                d.update(known_l)
                 result.append(d)
     return result
 
+
+def get_all_permutations_for_sets(letters_sets) -> list[dict]:
+    """ Возвращаем список словарей - ключей """
+    result = []
+    cipher_letters = letters_sets[:len(letters_sets) // 2]
+    decipher_letters = letters_sets[len(letters_sets) // 2:]
+    print(cipher_letters)
+    print(decipher_letters)
+    perm = list(itertools.permutations(decipher_letters))
+
+    for i in perm:
+        d = dict(zip(cipher_letters, i))
+        result.append(d)
+    
+    return result
+
+
+def get_all_permutations_for_sets_with_known(letters_sets, known_letters):
+    """ Берем потенциальный список ключей, берем только те ключи 
+    где если пересечения ключ-значение с известными парами букв +
+    добавляем в ключ известные пары если они отстутствуют """
+    pre_results = get_all_permutations_for_sets(letters_sets)
+    results = []
+    for key, value in enumerate(pre_results):
+        isValid = True
+        for letter in value:
+            if letter in known_letters:
+                if known_letters[letter] != value[letter]:
+                    isValid = False
+                    break
+        if isValid:
+            v = value.copy()  # почему-то если склеить эти две команды
+            v.update(known_letters)  # то результат None (?)
+            results.append(v)
+
+    return results
+
+
+def try_permutations_for_sets(cipher_text, set_string, known_letters):
+    """ Вариант перебора всех ключей когда пользователем задаётся множество:
+    шифрбуквы - расшифровки, из которых собираются все возможные пары ключей и значений. 
+    Возможно присутствие гласных и согласных вперемешку. """
+    deciphers = []
+    
+    if len(known_letters) == 0:
+        # пользователем не заданы точно определённые сочетания
+        all_keys = get_all_permutations_for_sets(set_string)
+    else:
+        # пользователем заданы некоторые точно определённые сочетания,
+        # учитываем их при переборе
+        all_keys = get_all_permutations_for_sets_with_known(set_string, known_letters)
+    
+    for i in all_keys:
+        q = decode_by_key_dictionary(cipher_text, i)
+        deciphers.append(q)
+
+    return deciphers

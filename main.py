@@ -230,7 +230,7 @@ def by_hands_processing(cipher_text):
             frequency_analysis(list(letter_frequencies.items()), list(bigrams.items()), list(trigrams.items()),
                                cipher_text)
         elif command == "4":
-            do_sets()
+            do_sets(cipher_text, key_dictionary)
             print_help_2()
         elif command == "5":
             letter_frequencies = count_letter_frequencies(cipher_text)
@@ -272,7 +272,7 @@ def by_hands_processing(cipher_text):
             print("Команда не распознана.")
 
 
-def do_sets():
+def do_sets(cipher_text, key_dictionary):
     print("\nВведите множество шифробукв через пробел и множество расшифровок через пробел.\n"
           "Разделите множества знаком дефис. Пример: а б в - п с о\n"
           "Введите 1 для возвращения на предыдущий уровень.")
@@ -299,14 +299,19 @@ def do_sets():
                 print("В каждом из множеств должно быть не менее двух символов.")
                 continue
             else:
-                cipher_letters = letters_sets[:len(letters_sets) // 2]
-                decipher_letters = letters_sets[len(letters_sets) // 2:]
-                print(cipher_letters)
-                print(decipher_letters)
-                perm = list(itertools.permutations(decipher_letters))
-                print(perm)
-                # res = []
-                # for i in perm:
+                deciphers = permutations.try_permutations_for_sets(cipher_text, letters_sets, key_dictionary)
+                
+                # копипаста для вывода расшифровок порциями
+                pos = 0
+                step = 10
+                for key, val in enumerate(deciphers):
+                    print(val)
+                    pos += 1
+                    if pos % step == 0:
+                        comm = input("Нажмите enter, чтобы продолжить вывод, любую команду чтобы прервать: ")
+                        if len(comm) != 0:
+                            break
+
 
 
 if __name__ == '__main__':
